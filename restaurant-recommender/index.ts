@@ -1,33 +1,39 @@
-import restaurants from "./restaurants";
+import { Order, orders, priceBracket } from "./orders";
+import { Restaurant, restaurants } from "./restaurants";
 
-
-const cediSign = "GH₵";
-const deliveryTimeMinutes = 90;
-const maxDistance = "10";
-let result: string;
-let hour: number = new Date().getHours();
-
-const priceBracket: number = cediSign.length;
-
-const filteredRestaurants = restaurants.filter(restaurant => {
-    if(Number(restaurant.priceBracket) > priceBracket) {
-        return false;
+const getMaxPrice = (price: priceBracket): number => {
+    if (price === priceBracket.Low) {
+        return 10.0;
+    } else if (price === priceBracket.Medium) {
+        return 20.0;
+    } else if (price === priceBracket.High) {
+        return 30.0
     }
-    if(restaurant.deliveryTimeMinutes > deliveryTimeMinutes) {
-        return false
-    }
-    if(restaurant.distance > maxDistance) {
-        return false;
-    }
-    if(hour < Number(restaurant.openHour) || hour > Number(restaurant.closeHour)) {
-        return false;
-    }
-
-    return restaurant;
-})
-
-if(filteredRestaurants.length === 0) {
-    result = "There are no restaurants available";
-} else {
-    result = `We found ${filteredRestaurants.length} restaurants, the first is ${filteredRestaurants[0].name}.`;
+    throw new Error("Invalid Price Bracket");
 }
+
+const getOrders = (price: priceBracket, orders: Order[][]): Order[][] => {
+    const filteredOrders: Order[][] = [];
+    orders.filter((restaurantOrders: Order[]) => {
+        const result = restaurantOrders.filter((order: Order) => {
+            order.price <= getMaxPrice(price);
+        });
+        filteredOrders.push(result);
+    });
+    return filteredOrders;
+};
+
+const printOrders = (restaurants: Restaurant[], orders: Order[][]) => {
+    restaurants.forEach((restaurant: Restaurant, index: number) => {
+        const restaurantOrders = orders[index];
+        if (restaurantOrders.length > 0) {
+            console.log(`Orders for ${restaurant.name}`);
+            restaurantOrders.forEach(order => {
+                console.log(`- Order ${order.name}: ${order.price}`);
+            })
+        }
+    })
+}
+
+const eligibleOrders = getOrders(priceBracket.Low, orders);
+printOrders(restaurants, eligibleOrders);
